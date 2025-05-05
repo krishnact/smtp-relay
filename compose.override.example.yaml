@@ -1,0 +1,12 @@
+services:
+  smtp-relay:
+    build: ./smtp-relay/app
+    environment:
+      RELAY_FROM_NAME: "Admins"
+      RELAY_FROM_EMAIL: "admins@axquotes.com"
+      BREVO_API_KEY: "xkeysib-xxxx"
+      BREVO_DAILY_LIMIT: 299"
+      SENDGRID_API_KEY: "SG.xxxxx"
+      SENDGRID_DAILY_LIMIT: 150
+
+

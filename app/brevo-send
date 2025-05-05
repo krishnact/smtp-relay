@@ -1,0 +1,54 @@
+#!/bin/bash
+
+API_KEY="${BREVO_API_KEY}"
+FROM_NAME="${BREVO_FROM_NAME}"
+FROM_EMAIL="${BREVO_FROM_EMAIL}"
+
+EMAIL=$(cat)
+
+# Extract headers
+TO_EMAIL=$(echo "$EMAIL" | grep -i "^To:" | head -n1 | sed 's/^To:[ ]*//' | tr -d '\\r\\n')
+TO_NAME=$(echo "$TO_EMAIL" | cut -d@ -f1 | sed 's/[^a-zA-Z0-9]//g')
+SUBJECT=$(echo "$EMAIL" | grep -i "^Subject:" | head -n1 | sed 's/^Subject:[ ]*//' | tr -d '\\r\\n')
+BODY=$(echo "$EMAIL" | sed -n '/^$/,$p' | tail -n +2)
+HTML_BODY="<html><body><pre>${BODY}</pre></body></html>"
+TEXT_BODY=$(echo "$BODY" | sed 's/["]/\\\\"/g')
+
+# Optional attachment from env (one file only)
+ATTACHMENT_JSON=""
+if [[ -n "$BREVO_ATTACHMENT_PATH" && -f "$BREVO_ATTACHMENT_PATH" ]]; then
+  ATTACHMENT_CONTENT=$(base64 "$BREVO_ATTACHMENT_PATH" | tr -d '\\n')
+  ATTACHMENT_NAME=$(basename "$BREVO_ATTACHMENT_PATH")
+  ATTACHMENT_JSON=", \"attachment\": [
+    {
+      \"content\": \"$ATTACHMENT_CONTENT\",
+      \"name\": \"$ATTACHMENT_NAME\"
+    }
+  ]"
+fi
+
+echo "[Brevo Relay] Sending email to $TO_EMAIL..."
+
+curl --silent --request POST \\
+  --url https://api.brevo.com/v3/smtp/email \\
+  --header 'accept: application/json' \\
+  --header "api-key: $API_KEY" \\
+  --header 'content-type: application/json' \\
+  --data @- <<EOF_JSON
+{
+  "sender": {
+    "name": "$FROM_NAME",
+    "email": "$FROM_EMAIL"
+  },
+  "to": [
+    {
+      "email": "$TO_EMAIL",
+      "name": "$TO_NAME"
+    }
+  ],
+  "subject": "$SUBJECT",
+  "htmlContent": "$HTML_BODY",
+  "textContent": "$TEXT_BODY"
+  $ATTACHMENT_JSON
+}
+EOF_JSON
