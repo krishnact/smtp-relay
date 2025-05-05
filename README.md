@@ -83,6 +83,13 @@ You can send emails using any SMTP client configured for:
 - No auth required (optional for internal use only)
 
 ---
+### Motivation:
+
+I had to create this because I was installing Zammad ticketing system, and it needed a SMTP server. My hosting provider blocks outgoing
+SMTP ports, so I could not use SMTP protocol to send messages. This smtp-relay provides a way for Zammad to think its talking to a SMTP server. 
+It works fine for our needs of sending about 250 messages per day (there is no reason it can not send 10000 messages per day).
+
+---
 
 ## 🧩 License
 
